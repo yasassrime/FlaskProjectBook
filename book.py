@@ -1,51 +1,29 @@
-import sqlite3
-
-from flask import Flask, request
+from flask import Flask
+from flask_mail import Mail, Message
+import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+mail= Mail(app)
 
-def db_connect():
-    conn = None
-    try:
-        conn = sqlite3.connect('books.sqlite')
-    except sqlite3.Error as e:
-        print(e)
-    return conn
+# Load environment variables from the .env file
+load_dotenv()
 
-@app.route('/books', methods=['GET', 'POST'])
-def books():
-    conn = db_connect()
-    c = conn.cursor()
-    if request.method == 'GET':
-        c.execute("SELECT * FROM books")
-        books = c.fetchall()
-        return {"books": books}
-    elif request.method == 'POST':
-        request_data = request.get_json()
-        new_book = {
-            "title": request_data['title'],
-            "author": request_data['author'],
-            "language": request_data['language']
-        }
-        c.execute("INSERT INTO books (title, author, language) VALUES (?, ?, ?)",
-                  (new_book['title'], new_book['author'], new_book['language']))
-        conn.commit()
-        return new_book, 201
+app.config['MAIL_SERVER']='smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'yasassriofficial@gmail.com'
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
 
-@app.route('/books/<int:book_id>', methods=['PUT'])
-def update_book(book_id):
-    conn = db_connect()
-    c = conn.cursor()
-    request_data = request.get_json()
-    updated_book = {
-        "title": request_data['title'],
-        "author": request_data['author'],
-        "language": request_data['language']
-    }
-    c.execute("UPDATE books SET title = ?, author = ?, language = ? WHERE id = ?",
-              (updated_book['title'], updated_book['author'], updated_book['language'], book_id))
-    conn.commit()
-    return updated_book
+@app.route("/")
+def index():
+   msg = Message('Hello', sender = 'yourId@gmail.com', recipients = ['yasassri.wickramasinghe@yoobeecolleges.com'])
+   msg.body = "Hello Flask message sent from Flask-Mail"
+   mail.send(msg)
+   return "Sent"
 
 if __name__ == '__main__':
-    app.run(port=3500, debug=True)
+   app.run(debug = True)
+
